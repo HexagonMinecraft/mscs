@@ -46,6 +46,7 @@ PERL=$(which perl)
 PYTHON=$(which python)
 WGET=$(which wget)
 RDIFF_BACKUP=$(which rdiff-backup)
+DUPLICITY=$(which duplicity)
 SOCAT=$(which socat)
 
 # Script Usage
@@ -1158,6 +1159,53 @@ worldBackup() {
   fi
   return 0
 }
+
+# ---------------------------------------------------------------------------
+#############################################################################
+# S3 Backup Is A Work In Progress
+# It is currently non-functional and untested. 
+#############################################################################
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Backup the world server with S3.
+#
+# @param 1 The world server to backup.
+# @return A 0 if backup successful, a 1 otherwise
+# ---------------------------------------------------------------------------
+worldBackupS3() {
+  local EXCLUDE_OPTION
+  # Synchronize the mirror image of the world prior to closing, if
+  # required.
+  if [ $ENABLE_MIRROR -eq 1 ] && [ -L "$WORLDS_LOCATION/$1" ] && [ -d $WORLDS_LOCATION/$1/$1-original ]; then
+    syncMirrorImage $1
+  fi
+  # Determine if we need to exclude the mirrored symlink or not
+  if [ -L "$WORLDS_LOCATION/$1/$1" ]; then
+    EXCLUDE_OPTION="--exclude $WORLDS_LOCATION/$1/$1"
+  fi
+
+  # Create the backup.
+  if ! $DUPLICITY $EXCLUDE_OPTION "$WORLDS_LOCATION/$1" "$BACKUP_LOCATION/$1" >> "$BACKUP_LOG"; then
+    echo "Error doing backup of world $1"
+    return 1
+  fi
+  # Cleanup old backups.
+  if [ $BACKUP_DURATION -gt 0 ]; then
+    if ! $DUPLICITY --remove-older-than ${BACKUP_DURATION}D --force "$BACKUP_LOCATION/$1" >> "$BACKUP_LOG"; then
+      echo "Error cleaning old backups of world $1"
+      return 1
+    fi
+  fi
+  return 0
+}
+
+# ---------------------------------------------------------------------------
+#############################################################################
+# S3 Backup Is A Work In Progress
+# It is currently non-functional and untested. 
+#############################################################################
+# ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
 # List the backups for the world server.
