@@ -2440,11 +2440,11 @@ case "$1" in
           sendCommand $WORLD "save-all"
           sendCommand $WORLD "save-off"
           sleep 20
-          worldBackup $WORLD
+          worldBackupS3 $WORLD
           sendCommand $WORLD "save-on"
           sendCommand $WORLD "say Backup complete."
         else
-          worldBackup $WORLD
+          worldBackupS3 $WORLD
         fi
         # Remove the lock file.
         removeLockFile $WORLD "backup"
@@ -2481,7 +2481,7 @@ case "$1" in
       printf "World '$2' is running. Stop it first\n"
       printf "  $PROG stop $2\n"
       exit 1
-    elif worldBackup "$2"; then
+    elif worldBackupS3 "$2"; then
       worldBackupRestore "$2" "$3"
     else
       echo "Current world's state backup failed. Restore cancelled."
@@ -2521,7 +2521,7 @@ case "$1" in
     printf "Backing up Minecraft Server:"
     for WORLD in $WORLDS; do
       printf " $WORLD"
-      worldBackup $WORLD
+      worldBackupS3 $WORLD
     done
     printf ".\n"
     # Update the server software.
